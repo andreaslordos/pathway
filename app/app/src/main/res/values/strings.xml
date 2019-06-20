@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Pathway</string>
+    <string name="points_left">to go \nfor next reward</string>
 </resources>

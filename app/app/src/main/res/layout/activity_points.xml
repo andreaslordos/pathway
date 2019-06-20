@@ -12,6 +12,7 @@
         android:layout_height="300dp"
         android:layout_marginTop="24dp"
         app:cs_circle_style="butt"
+        android:id="@+id/circle"
         app:cs_progress="54"
         app:cs_circle_stroke_width="36dp"
         android:padding="40dp"/>
