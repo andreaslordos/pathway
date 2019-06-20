@@ -1,0 +1,79 @@
+import requests
+import json
+import time
+
+def getRisk(source, dest):
+    def getTrafficRisk(source,destination):
+
+        def getTraffic(source,destination):
+            url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+            querystring = {"units":"metric","departure_time":str(int(time.time())),"traffic_model":"pessimistic","origins":str(str(source[0])+','+str(source[1])),"destinations":str(str(destination[0])+','+str(destination[1])),"key":"AIzaSyB1adu0mLQ3pUg1jtI-eeyzcLaO65LFeqQ"}
+            headers = {
+                'cache-control': "no-cache",
+                }
+            response = requests.request("GET", url, headers=headers, params=querystring)
+            d = json.loads(response.text)
+            return d['rows'][0]['elements'][0]['duration_in_traffic']['value'],d['rows'][0]['elements'][0]['duration']['value']
+
+        def calculateRisk(traffic_time,total_time):
+            relative_traffic = abs((total_time-traffic_time))/traffic_time
+            if relative_traffic>1:
+                return 1
+            return relative_traffic
+
+        traffic_time,total_time = getTraffic(source,destination)
+#        print(traffic_time,total_time)
+        return calculateRisk(traffic_time,total_time)
+
+    def getWeatherRisk(query):
+            def get_weather(lat,long):
+                    apikey="c38a7168acf848dde7ada7bef2e531ce"
+                    data = requests.get("https://api.openweathermap.org/data/2.5/weather?lat="+str(lat)+"&lon="+str(long)+"&appid="+apikey)
+                    data = data.content
+                    #print(data)
+                    weather=eval(str(data)[2:-1])
+                    return weather
+            def get_weather_name(q):
+                    apikey="c38a7168acf848dde7ada7bef2e531ce"
+                    data = requests.get("https://api.openweathermap.org/data/2.5/weather?q="+q+"&appid="+apikey)
+                    data = data.content
+                    #print(data)
+                    weather=eval(str(data)[2:-1])
+                    return weather
+                
+
+            def calculateRisk(weather_dict):
+                    '''
+                    IDs:
+                    2xx -> Thunderstorm
+                    3xx -> Drizzle
+                    5xx -> Rain
+                    6xx -> Snow
+                    7xx -> Atmosphere
+                            701 -> Mist
+                            741 -> Fog
+                            762 -> Volcanic Ash
+                            781 -> Tornado
+                    '''
+                    if weather_dict['visibility']<1000:
+                            risk = 1-((weather_dict['visibility']/1000))
+                    else:
+                            risk=0
+
+                    wid = int(str(weather_dict['weather'][0]['id'])[0])
+#                    print("wid",wid)
+                    if wid==2 or wid==6 or wid==7:
+                            risk += 0.6
+                    elif wid==5:
+                            risk += 0.4
+                    elif wid==3:
+                            risk += 0.2
+                    if risk>1:
+                            return 1
+                    return risk
+
+            weather=get_weather_name(query)
+            return calculateRisk(weather)
+    print(getWeatherRisk("Nicosia, CY"))
+    print(getTrafficRisk(source, dest))
+   
